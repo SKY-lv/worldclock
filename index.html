@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorldClock - 世界时钟</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
+.app{max-width:900px;margin:0 auto;padding:20px;}
+.header{text-align:center;margin-bottom:30px;}
+.header h1{font-size:1.5em;} .header h1 span{color:#0ea5e9;}
+.local-time{text-align:center;margin-bottom:30px;padding:30px;background:#1e293b;border-radius:16px;}
+.local-time .time{font-size:4em;font-weight:600;color:#0ea5e9;font-family:'Courier New',monospace;}
+.local-time .date{font-size:1.2em;color:#94a3b8;margin-top:8px;}
+.local-time .timezone{font-size:0.9em;color:#64748b;margin-top:4px;}
+.clocks{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.clock{background:#1e293b;border-radius:12px;padding:20px;text-align:center;}
+.clock .city{font-size:1.1em;margin-bottom:8px;}
+.clock .time{font-size:2em;font-weight:600;color:#0ea5e9;font-family:'Courier New',monospace;}
+.clock .date{font-size:0.9em;color:#64748b;margin-top:4px;}
+.clock .diff{font-size:0.8em;color:#475569;margin-top:4px;}
+.add-clock{background:#0f172a;border:2px dashed #334155;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.add-clock:hover{border-color:#0ea5e9;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header"><h1>World<span>Clock</span></h1></div>
+  
+  <div class="local-time">
+    <div class="time" id="local-time">00:00:00</div>
+    <div class="date" id="local-date">2026年4月6日 星期一</div>
+    <div class="timezone" id="local-tz">UTC+8</div>
+  </div>
+  
+  <div class="clocks" id="clocks"></div>
+</div>
+
+<script>
+const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+const defaultCities = [
+  { city: '纽约', offset: -5, country: '美国' },
+  { city: '伦敦', offset: 0, country: '英国' },
+  { city: '巴黎', offset: 1, country: '法国' },
+  { city: '东京', offset: 9, country: '日本' },
+  { city: '悉尼', offset: 10, country: '澳大利亚' },
+  { city: '迪拜', offset: 4, country: '阿联酋' }
+];
+
+let cities = JSON.parse(localStorage.getItem('worldclock_cities') || 'null') || defaultCities;
+
+function update() {
+  const now = new Date();
+  const localOffset = -now.getTimezoneOffset() / 60;
+  
+  document.getElementById('local-time').textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
+  document.getElementById('local-date').textContent = 
+    `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`;
+  document.getElementById('local-tz').textContent = `UTC${localOffset >= 0 ? '+' : ''}${localOffset}`;
+  
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  
+  document.getElementById('clocks').innerHTML = cities.map(c => {
+    const time = new Date(utc + c.offset * 3600000);
+    const diff = c.offset - localOffset;
+    const diffStr = diff === 0 ? '本地时间' : `${diff > 0 ? '+' : ''}${diff}小时`;
+    
+    return `
+      <div class="clock">
+        <div class="city">${c.city}</div>
+        <div class="time">${time.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' })}</div>
+        <div class="date">${time.getMonth() + 1}月${time.getDate()}日</div>
+        <div class="diff">${diffStr}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+setInterval(update, 1000);
+update();
+</script>
+</body>
+</html>
